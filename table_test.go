@@ -373,14 +373,14 @@ func TestTableAlterIndexReorder(t *testing.T) {
 			t.Errorf("Expected tableAlters[1] to add %s, instead added %s", orig[1].Name, add.Index.Name)
 		}
 		assertClauses(&from, &to, false, "")
-		assertClauses(&from, &to, true, "DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+		assertClauses(&from, &to, true, "DROP KEY `%s`, ADD %s", orig[1].Name, orig[1].Definition())
 	}
 
 	// Clustered index key changes: same effect as mods.StrictIndexOrder
 	to.PrimaryKey = nil
 	to.CreateStatement = to.GeneratedCreateStatement()
-	assertClauses(&from, &to, false, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
-	assertClauses(&from, &to, true, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+	assertClauses(&from, &to, false, "DROP PRIMARY KEY, DROP KEY `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+	assertClauses(&from, &to, true, "DROP PRIMARY KEY, DROP KEY `%s`, ADD %s", orig[1].Name, orig[1].Definition())
 
 	// Restore to previous state, and then modify [1]. Resulting diff should drop
 	// [1] and [2], then re-add the modified [1], and then re-add the unmodified
@@ -410,8 +410,8 @@ func TestTableAlterIndexReorder(t *testing.T) {
 				t.Errorf("tableAlters[3] does not match expectations; found %+v", add4.Index)
 			}
 		}
-		assertClauses(&from, &to, false, "DROP INDEX `%s`, ADD %s", orig[1].Name, to.SecondaryIndexes[1].Definition())
-		assertClauses(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s", orig[1].Name, orig[2].Name, to.SecondaryIndexes[1].Definition(), orig[2].Definition())
+		assertClauses(&from, &to, false, "DROP KEY `%s`, ADD %s", orig[1].Name, to.SecondaryIndexes[1].Definition())
+		assertClauses(&from, &to, true, "DROP KEY `%s`, DROP KEY `%s`, ADD %s, ADD %s", orig[1].Name, orig[2].Name, to.SecondaryIndexes[1].Definition(), orig[2].Definition())
 	}
 
 	// Adding a new index before [1] should also result in dropping the old [1]
@@ -430,7 +430,7 @@ func TestTableAlterIndexReorder(t *testing.T) {
 		t.Errorf("Expected 5 clauses, instead found %d", len(tableAlters))
 	} else {
 		assertClauses(&from, &to, false, "ADD %s", newIdx.Definition())
-		assertClauses(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s, ADD %s", orig[1].Name, orig[2].Name, newIdx.Definition(), orig[1].Definition(), orig[2].Definition())
+		assertClauses(&from, &to, true, "DROP KEY `%s`, DROP KEY `%s`, ADD %s, ADD %s, ADD %s", orig[1].Name, orig[2].Name, newIdx.Definition(), orig[1].Definition(), orig[2].Definition())
 	}
 
 	// The opposite operation -- dropping the new index that we put before [1] --
@@ -444,8 +444,8 @@ func TestTableAlterIndexReorder(t *testing.T) {
 		} else if drop.Index.Name != newIdx.Name {
 			t.Errorf("Expected tableAlters[0] to drop %s, instead dropped %s", newIdx.Name, drop.Index.Name)
 		}
-		assertClauses(&to, &from, false, "DROP INDEX `%s`", newIdx.Name)
-		assertClauses(&to, &from, true, "DROP INDEX `%s`", newIdx.Name)
+		assertClauses(&to, &from, false, "DROP KEY `%s`", newIdx.Name)
+		assertClauses(&to, &from, true, "DROP KEY `%s`", newIdx.Name)
 	}
 }
 
