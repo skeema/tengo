@@ -194,9 +194,9 @@ func TestTableAlterAddOrDropIndex(t *testing.T) {
 		t.Error("Pointers in table alter do not point to expected values")
 	}
 
-	// Start over; change an existing secondary index
+	// Start over; change the last existing secondary index
 	to = aTable(1)
-	to.SecondaryIndexes[0].Unique = false
+	to.SecondaryIndexes[1].Unique = true
 	to.CreateStatement = to.GeneratedCreateStatement()
 	tableAlters, supported = from.Diff(&to)
 	if len(tableAlters) != 2 || !supported {
@@ -206,14 +206,14 @@ func TestTableAlterAddOrDropIndex(t *testing.T) {
 	if !ok {
 		t.Fatalf("Incorrect type of table alter[0] returned: expected %T, found %T", ta2, tableAlters[0])
 	}
-	if ta2.Table != &to || ta2.Index != from.SecondaryIndexes[0] {
+	if ta2.Table != &to || ta2.Index != from.SecondaryIndexes[1] {
 		t.Error("Pointers in table alter[0] do not point to expected values")
 	}
 	ta, ok = tableAlters[1].(AddIndex)
 	if !ok {
 		t.Fatalf("Incorrect type of table alter[1] returned: expected %T, found %T", ta, tableAlters[1])
 	}
-	if ta.Table != &to || ta.Index != to.SecondaryIndexes[0] {
+	if ta.Table != &to || ta.Index != to.SecondaryIndexes[1] {
 		t.Error("Pointers in table alter[1] do not point to expected values")
 	}
 
@@ -327,25 +327,26 @@ func TestTableAlterIndexReorder(t *testing.T) {
 			Columns:  []*Column{table.Columns[5], table.Columns[2]},
 			SubParts: []uint16{0, 10},
 		})
+		table.CreateStatement = table.GeneratedCreateStatement()
 		return table
 	}
 
-	assertStatement := func(from, to *Table, strict bool, format string, a ...interface{}) {
+	assertClauses := func(from, to *Table, strict bool, format string, a ...interface{}) {
 		t.Helper()
 		td := NewAlterTable(from, to)
-		var stmt string
+		var clauses string
 		if td != nil {
 			var err error
-			stmt, err = td.Statement(StatementModifiers{
+			clauses, err = td.Clauses(StatementModifiers{
 				StrictIndexOrder: strict,
 			})
 			if err != nil {
-				t.Fatalf("Unexpected error result from Statement(): %s", err)
+				t.Fatalf("Unexpected error result from Clauses(): %s", err)
 			}
 		}
 		expected := fmt.Sprintf(format, a...)
-		if stmt != expected {
-			t.Errorf("Unexpected result from Statement()\nExpected:\n  %s\nFound:\n  %s", expected, stmt)
+		if clauses != expected {
+			t.Errorf("Unexpected result from Clauses()\nExpected:\n  %s\nFound:\n  %s", expected, clauses)
 		}
 	}
 
@@ -356,6 +357,7 @@ func TestTableAlterIndexReorder(t *testing.T) {
 	// drop [1] and re-add [1], but should manifest as a no-op statement unless
 	// mods.StrictIndexOrder enabled.
 	to.SecondaryIndexes[1], to.SecondaryIndexes[2] = to.SecondaryIndexes[2], to.SecondaryIndexes[1]
+	to.CreateStatement = to.GeneratedCreateStatement()
 	tableAlters, _ := from.Diff(&to)
 	if len(tableAlters) != 2 {
 		t.Errorf("Expected 2 clauses, instead found %d", len(tableAlters))
@@ -370,14 +372,15 @@ func TestTableAlterIndexReorder(t *testing.T) {
 		} else if add.Index.Name != orig[1].Name {
 			t.Errorf("Expected tableAlters[1] to add %s, instead added %s", orig[1].Name, add.Index.Name)
 		}
-		assertStatement(&from, &to, false, "")
-		assertStatement(&from, &to, true, "DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+		assertClauses(&from, &to, false, "")
+		assertClauses(&from, &to, true, "DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
 	}
 
 	// Clustered index key changes: same effect as mods.StrictIndexOrder
 	to.PrimaryKey = nil
-	assertStatement(&from, &to, false, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
-	assertStatement(&from, &to, true, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+	to.CreateStatement = to.GeneratedCreateStatement()
+	assertClauses(&from, &to, false, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
+	assertClauses(&from, &to, true, "DROP PRIMARY KEY, DROP INDEX `%s`, ADD %s", orig[1].Name, orig[1].Definition())
 
 	// Restore to previous state, and then modify [1]. Resulting diff should drop
 	// [1] and [2], then re-add the modified [1], and then re-add the unmodified
@@ -385,6 +388,7 @@ func TestTableAlterIndexReorder(t *testing.T) {
 	// mods.StrictIndexOrder used.
 	to = getTable()
 	to.SecondaryIndexes[1].SubParts[1] = 8
+	to.CreateStatement = to.GeneratedCreateStatement()
 	tableAlters, _ = from.Diff(&to)
 	if len(tableAlters) != 4 {
 		t.Errorf("Expected 4 clauses, instead found %d", len(tableAlters))
@@ -406,8 +410,8 @@ func TestTableAlterIndexReorder(t *testing.T) {
 				t.Errorf("tableAlters[3] does not match expectations; found %+v", add4.Index)
 			}
 		}
-		assertStatement(&from, &to, false, "DROP INDEX `%s`, ADD %s", orig[1].Name, to.SecondaryIndexes[1].Definition())
-		assertStatement(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s", orig[1].Name, orig[2].Name, to.SecondaryIndexes[1].Definition(), orig[2].Definition())
+		assertClauses(&from, &to, false, "DROP INDEX `%s`, ADD %s", orig[1].Name, to.SecondaryIndexes[1].Definition())
+		assertClauses(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s", orig[1].Name, orig[2].Name, to.SecondaryIndexes[1].Definition(), orig[2].Definition())
 	}
 
 	// Adding a new index before [1] should also result in dropping the old [1]
@@ -420,12 +424,13 @@ func TestTableAlterIndexReorder(t *testing.T) {
 		SubParts: []uint16{0},
 	}
 	to.SecondaryIndexes = []*Index{to.SecondaryIndexes[0], newIdx, to.SecondaryIndexes[1], to.SecondaryIndexes[2]}
+	to.CreateStatement = to.GeneratedCreateStatement()
 	tableAlters, _ = from.Diff(&to)
 	if len(tableAlters) != 5 {
 		t.Errorf("Expected 5 clauses, instead found %d", len(tableAlters))
 	} else {
-		assertStatement(&from, &to, false, "ADD %s", newIdx.Definition())
-		assertStatement(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s, ADD %s", orig[1].Name, orig[2].Name, newIdx.Definition(), orig[1].Definition(), orig[2].Definition())
+		assertClauses(&from, &to, false, "ADD %s", newIdx.Definition())
+		assertClauses(&from, &to, true, "DROP INDEX `%s`, DROP INDEX `%s`, ADD %s, ADD %s, ADD %s", orig[1].Name, orig[2].Name, newIdx.Definition(), orig[1].Definition(), orig[2].Definition())
 	}
 
 	// The opposite operation -- dropping the new index that we put before [1] --
@@ -439,8 +444,8 @@ func TestTableAlterIndexReorder(t *testing.T) {
 		} else if drop.Index.Name != newIdx.Name {
 			t.Errorf("Expected tableAlters[0] to drop %s, instead dropped %s", newIdx.Name, drop.Index.Name)
 		}
-		assertStatement(&to, &from, false, "DROP INDEX `%s`", newIdx.Name)
-		assertStatement(&to, &from, true, "DROP INDEX `%s`", newIdx.Name)
+		assertClauses(&to, &from, false, "DROP INDEX `%s`", newIdx.Name)
+		assertClauses(&to, &from, true, "DROP INDEX `%s`", newIdx.Name)
 	}
 }
 

@@ -342,7 +342,7 @@ func (td *TableDiff) alterStatement(mods StatementModifiers) (string, error) {
 	// Ignore index repositioning, unless StrictIndexOrder enabled, or unless the
 	// order is actually relevant to the clustered index key
 	trivialIndexMoves := make(map[string]bool)
-	if mods.StrictIndexOrder || td.To.ClusteredIndexKey() != td.To.PrimaryKey {
+	if !mods.StrictIndexOrder && td.To.ClusteredIndexKey() == td.To.PrimaryKey {
 		// Iterate through the clauses to find cases where we drop an index and then
 		// later re-add the exact same index. (Note that the drop will *always* come
 		// before the subsequent re-add in td.alterClauses in this case.)
