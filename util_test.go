@@ -86,25 +86,25 @@ func TestNormalizeCreateOptions(t *testing.T) {
 }
 
 func TestOrderCreateConstraints(t *testing.T) {
-       input := "CREATE TABLE `constraints` (\n" +
-               "  `name` varchar(30) DEFAULT NULL,\n" +
-               "  `code` char(20) CHARACTER SET latin1 COLLATE latin1_bin,\n" +
-               "  `num` int(10) unsigned NOT NULL,\n" +
-               "  KEY `idx1` (`name`) COMMENT 'lol',\n" +
-               "  KEY `idx2` (`num`),\n" +
-               "  CONSTRAINT `num_fk` FOREIGN KEY (`num`) REFERENCES `nums` (`num`),\n" +
-               "  CONSTRAINT `name_fk` FOREIGN KEY (`name`) REFERENCES `names` (`name`)\n" +
-               ") ENGINE=InnoDB DEFAULT CHARSET=latin1;\n"
-       expect := "CREATE TABLE `constraints` (\n" +
-               "  `name` varchar(30) DEFAULT NULL,\n" +
-               "  `code` char(20) CHARACTER SET latin1 COLLATE latin1_bin,\n" +
-               "  `num` int(10) unsigned NOT NULL,\n" +
-               "  KEY `idx1` (`name`) COMMENT 'lol',\n" +
-               "  KEY `idx2` (`num`),\n" +
-               "  CONSTRAINT `name_fk` FOREIGN KEY (`name`) REFERENCES `names` (`name`),\n" +
-               "  CONSTRAINT `num_fk` FOREIGN KEY (`num`) REFERENCES `nums` (`num`)\n" +
-               ") ENGINE=InnoDB DEFAULT CHARSET=latin1;\n"
-       if actual := OrderCreateConstraints(input); actual != expect {
-               t.Errorf("OrderCreateConstraints returned unexpected value. \nExpected:\n%s\nActual:\n%s", expect, actual)
-       }
+	input := "CREATE TABLE `constraints` (\n" +
+		"  `name` varchar(30) DEFAULT NULL,\n" +
+		"  `code` char(20) CHARACTER SET latin1 COLLATE latin1_bin,\n" +
+		"  `num` int(10) unsigned NOT NULL,\n" +
+		"  KEY `idx1` (`name`) COMMENT 'lol',\n" +
+		"  KEY `idx2` (`num`),\n" +
+		"  CONSTRAINT `num_fk` FOREIGN KEY (`num`) REFERENCES `nums` (`num`),\n" +
+		"  CONSTRAINT `name_fk` FOREIGN KEY (`name`) REFERENCES `names` (`name`)\n" +
+		") ENGINE=InnoDB DEFAULT CHARSET=latin1;\n"
+	expect := "CREATE TABLE `constraints` (\n" +
+		"  `name` varchar(30) DEFAULT NULL,\n" +
+		"  `code` char(20) CHARACTER SET latin1 COLLATE latin1_bin,\n" +
+		"  `num` int(10) unsigned NOT NULL,\n" +
+		"  KEY `idx1` (`name`) COMMENT 'lol',\n" +
+		"  KEY `idx2` (`num`),\n" +
+		"  CONSTRAINT `name_fk` FOREIGN KEY (`name`) REFERENCES `names` (`name`),\n" +
+		"  CONSTRAINT `num_fk` FOREIGN KEY (`num`) REFERENCES `nums` (`num`)\n" +
+		") ENGINE=InnoDB DEFAULT CHARSET=latin1;\n"
+	if actual := OrderCreateConstraints(input); actual != expect {
+		t.Errorf("OrderCreateConstraints returned unexpected value. \nExpected:\n%s\nActual:\n%s", expect, actual)
+	}
 }
