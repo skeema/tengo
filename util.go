@@ -88,8 +88,8 @@ func OrderCreateConstraints(createStmt string) string {
         // remove begin and end of the CREATE statement, append remaining constraint from the end
         constraints := append(splitStmt[1:len(splitStmt)-1], end[0]+",\n")
         sort.Strings(constraints)
-        sorted_constraints := string("  CONSTRAINT"+strings.TrimSuffix(strings.Join(constraints, "  CONSTRAINT"),",\n"))
-        newStmt := begin+sorted_constraints+"\n"+end[1]
+        sortedConstraints := string("  CONSTRAINT"+strings.TrimSuffix(strings.Join(constraints, "  CONSTRAINT"),",\n"))
+        newStmt := begin+sortedConstraints+"\n"+end[1]
         return newStmt
 }
 
