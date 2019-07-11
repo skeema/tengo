@@ -986,7 +986,7 @@ func (instance *Instance) querySchemaTables(schema string) ([]*Table, error) {
 			// diffing for the table. Ignore next-auto-increment differences in this
 			// comparison, since the value may have changed between our previous
 			// information_schema introspection and our current SHOW CREATE TABLE call!
-			actual, _ := ParseCreateAutoInc(t.CreateStatement)
+			actual, _ := ParseCreateAutoInc(OrderCreateConstraints(t.CreateStatement))
 			expected, _ := ParseCreateAutoInc(t.GeneratedCreateStatement(flavor))
 			if actual != expected {
 				t.UnsupportedDDL = true

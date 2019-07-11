@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sort"
 )
 
 // EscapeIdentifier is for use in safely escaping MySQL identifiers (table
@@ -71,6 +72,25 @@ func SplitHostOptionalPort(hostaddr string) (string, int, error) {
 	}
 
 	return host, port, nil
+}
+
+// OrderCreateConstraints parses a CREATE TABLE statement, formatted in the same
+// manner as SHOW CREATE TABLE, and sorts CONSTRAINT lines if more than one present.
+// The modified CREATE TABLE will be returned.
+func OrderCreateConstraints(createStmt string) string {
+        splitStmt := strings.Split(createStmt,"  CONSTRAINT")
+        if len(splitStmt) < 3 {
+                return createStmt
+        }
+        begin := splitStmt[0]
+        // split last constraint line from the end
+        end := strings.SplitN(splitStmt[len(splitStmt)-1],"\n",2)
+        // remove begin and end of the CREATE statement, append remaining constraint from the end
+        constraints := append(splitStmt[1:len(splitStmt)-1], end[0]+",\n")
+        sort.Strings(constraints)
+        sorted_constraints := string("  CONSTRAINT"+strings.TrimSuffix(strings.Join(constraints, "  CONSTRAINT"),",\n"))
+        newStmt := begin+sorted_constraints+"\n"+end[1]
+        return newStmt
 }
 
 // ParseCreateAutoInc parses a CREATE TABLE statement, formatted in the same
