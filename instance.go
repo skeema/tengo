@@ -1115,7 +1115,9 @@ func (instance *Instance) querySchemaTables(schema string) ([]*Table, error) {
 		         rc.update_rule AS update_rule, rc.delete_rule AS delete_rule,
 		         rc.referenced_table_name AS referenced_table_name,
 		         IF(rc.constraint_schema=rc.unique_constraint_schema, '', rc.unique_constraint_schema) AS referenced_schema,
-		         kcu.referenced_column_name AS referenced_column_name
+		         kcu.referenced_column_name AS referenced_column_name,
+		         /* ordinal_position columns is projected but now used as it is present in order by clause
+		            Vitess planner is not able to support this query without this column present in projection. */
 		         kcu.ordinal_position AS ordinal_position
 		FROM     referential_constraints rc
 		JOIN     key_column_usage kcu ON kcu.constraint_name = rc.constraint_name AND
