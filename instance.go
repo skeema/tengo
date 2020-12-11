@@ -1116,6 +1116,7 @@ func (instance *Instance) querySchemaTables(schema string) ([]*Table, error) {
 		         rc.referenced_table_name AS referenced_table_name,
 		         IF(rc.constraint_schema=rc.unique_constraint_schema, '', rc.unique_constraint_schema) AS referenced_schema,
 		         kcu.referenced_column_name AS referenced_column_name
+		         kcu.ordinal_position AS ordinal_position
 		FROM     referential_constraints rc
 		JOIN     key_column_usage kcu ON kcu.constraint_name = rc.constraint_name AND
 		                                 kcu.table_schema = ? AND
