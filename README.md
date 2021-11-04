@@ -1,56 +1,18 @@
 # Go La Tengo
 
-[![build status](https://img.shields.io/github/workflow/status/skeema/tengo/Tests/main)](https://github.com/skeema/tengo/actions)
-[![code coverage](https://img.shields.io/coveralls/skeema/tengo.svg)](https://coveralls.io/r/skeema/tengo)
-[![godoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/skeema/tengo)
-[![latest release](https://img.shields.io/github/release/skeema/tengo.svg)](https://github.com/skeema/tengo/releases)
-
 Golang library for MySQL and MariaDB database automation
 
-## Features
+## Repo now archived
 
-### Schema introspection and diff
+Due to some unfortunate circumstances, it has become necessary to permanently suspend development of this package as an independent repo.
 
-Go La Tengo examines several `information_schema` tables in order to build Go struct values representing schemas (databases), tables, columns, indexes, foreign key constraints, stored procedures, and functions. These values can be diff'ed to generate corresponding DDL statements.
+Go La Tengo is integral to Skeema, but was designed as a reusable package in a separate repo, with the hope of building development momentum for use-cases *outside* of schema management. For example, this package's introspection logic could be used as the basis of a code-gen ORM. However, providing it as a separate repo requires a significant time investment: the codebase must be separately maintained, tested, versioned, and released; backwards-incompatible API changes must be avoided, limiting future refactors; and each change must be vendored inside of the Skeema CLI's repo as well.
 
-### Instance modeling
+In early 2021, one of the external users of this package created a hostile fork, for the sole purpose of creating schema management functionality which *directly* competes with Skeema. The forker is a startup that has raised over $100 million USD, but has nonetheless not contributed to this package (or any part of Skeema) in any way whatsoever. Worse still, their fork provides functionality which is only present in our Premium edition products.
 
-The `tengo.Instance` struct models a single database instance. It keeps track of multiple, separate connection pools for using different default schema and session settings. This helps to avoid problems with Go's database/sql methods, which are incompatible with USE statements and SET SESSION statements.
+Skeema is a bootstrapped (self-funded) product, and ongoing development is dependent on revenue from our Premium products. It is absolutely not practical or reasonable to continue development of this repo when our own code is effectively being used against us, by a competing company with much deeper pockets.
 
-## Status
-
-This is package is battle-tested from years of production use at many companies. The release numbering is still pre-1.0 though as the API is subject to minor changes. Backwards-incompatible changes are generally avoided whenever possible, but no guarantees are made. 
-
-As of September 2021, open source development of this repo is mostly frozen until further notice.
-
-### Supported databases
-
-Tagged releases are tested against the following databases, all running on Linux:
-
-* MySQL 5.5 - 8.0
-* Percona Server 5.5 - 8.0
-* MariaDB 10.1 - 10.6
-
-Outside of a tagged release, every commit to the main branch is automatically tested against MySQL 5.7 and 8.0.
-
-### Unsupported in table diffs
-
-Go La Tengo **cannot** diff tables containing any of the following MySQL features:
-
-* spatial indexes
-* sub-partitioning (two levels of partitioning in the same table)
-* special features of non-InnoDB storage engines
-
-Go La Tengo also does not yet support rename operations, e.g. column renames or table renames.
-
-### Ignored object types
-
-The following object types are completely ignored by this package. Their presence won't break anything, but they will not be introspected or represented by the structs in this package.
-
-* views
-* triggers
-* events
-* grants / users / roles
+All functionality here has now been merged directly into the Skeema CLI's primary repo as an internal sub-package. As of 4 November 2021, this separate Tengo repo is now archived, and may be deleted entirely at some point in the future.
 
 ## External Dependencies
 
